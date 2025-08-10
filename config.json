@@ -1,0 +1,130 @@
+{
+  "token": "",
+  "useWhitelist": true,
+  "approvedGuilds": [
+  ],
+  "debug": false,
+  "commandTriggers": {
+    "commandChar": "!",
+    "help": [ "ape?", "apes?", "ape help", "apes help" ],
+    "startMatch": [ "fite", "brawl", "start match"],
+    "settingsKeyword": "settings"
+  },
+  "useReactions": true,
+  "defaultReactionTriggerWords": [
+    "gg"
+  ],
+  "defaultResponses": [
+    "Apes Respect!",
+    "Love is in the air :heart:",
+    "Apes Hug :people_hugging:",
+    "Who won?",
+    "Another brawl, another legend !",
+    "That was bananas! :banana:",
+    "Honor in the jungle :evergreen_tree:",
+    "Stories will be told !"
+  ],
+  "patchNotes": [
+    "### APES Has Evolved!",
+    "-# version 0.5.5",
+    "__The Ape learned to:__",
+    "- Use Slash `/` Commands.",
+    "",
+    "-# For more information type `ape?` or `/ape`"
+  ],
+  "helpText": [
+    "__Automated Participants Enrollment Systems__",
+    "-# version: {version}",
+    "",
+    "To start a match type one of these:",
+    "{commands}",
+    "",
+    "or use the `/` comand `/fight`",
+    "",
+    "The default match type is 2 teams, and the Ape will try to divide the players into equally sized teams",
+    "",
+    "For more information click one of the buttons",
+    "",
+    "-# APES collects minimal data, click **Data Collection** for details & options"
+  ],
+  "typeText": [
+    "__Match Types:__",
+    "__Match by Team Sizes (e.g 2v2):__",
+    "`{cmdChr}{firstCmd} #v#` or `/fight_team_size`",
+    "- Use formats like `1v1`, `2v2`, `1v3`, etc. to create a specific match type.",
+    "    - This limits how many players can join and creates **2 teams** with the specified sizes.",
+    "  - Example: `{cmdChr}{firstCmd} 2v2`",
+    "",
+    "- Add `--nl` to remove the 2-team limit, or `false` in the `two teams only` option",
+    "    - This allows more players to join and creates as many teams as needed.",
+    "  - Useful when having a large event",
+    "  - After rolling the teams you can than split into multiple 2-teams matches",
+    "  - Example: `{cmdChr}{firstCmd} 2v2 --nl`",
+    "",
+    "__Match by Team Count (e.g 4 teams):__",
+    "`{cmdChr}{firstCmd} # teams` or `/fight_team_count`",
+    "- Create a match with more than 2 teams.",
+    "- The Ape will try to divide players evenly between all teams.",
+    "- Example: `{cmdChr}{firstCmd} 4 teams`",
+    "",
+    "__Pre-Assigned Teams:__",
+    "`{cmdChr}{firstCmd} # teams --pre`",
+    "or `/fight_team_count` and choose `true` in the pre assigned teams option",
+    "- Use this if you are creating a match with predetermined teams.",
+    "- Players can join specific teams, and those teams will then be rolled against each other.",
+    "- Example: `{cmdChr}{firstCmd} 4 teams --pre`"
+  ],
+  "swapText": [
+    "__Swaping Players:__",
+    "- After rolling a team, click the 'Swap' button and follow the instructions.",
+    "- **Or:** Reply to a Match message",
+    "    - than type `{cmdChr}swap @Player1 @Player2`",
+    "- You can only swap players in a match with 2 teams.",
+    "    - Click the split button to **Split** the match"
+  ],
+  "splitText": [
+    "__Spliting a Match:__",
+    "- When a match has more than 2 teams, you can press the **Split** button to divide it into multiple 2-team matches."
+  ],
+  "leaderText": [
+    "__Leaderboard__",
+    "- To enter a match into the leaderboard, click the **Start Match** button once the teams are rolled.",
+    "- This will lock the match from being rolled again or having participants added.",
+    "- When the match is done, click **End Match**.",
+    "- Then choose the winning team.",
+    "- Only the losing team, Mods, and Admins can verify a team's win.",
+    "- To see the server leaderboard, type: `{cmdChr}ranks`",
+    "- Only matches with 2 teams can be entered into the leaderboard.",
+    "    - If the match has more than 2 teams, click the split button to **Split** the match."
+  ],
+  "dataCollectionText": [
+    "__APES Data Collection__",
+    "APES collects basic user data that is publicly visible to all in order to generate leaderboards, calculate ranks and match scores.",
+    "",
+    "__Data Collected:__",
+    "- Discord username and user ID",
+    "- Number of matches won and lost",
+    "- Total rank score",
+    "",
+    "Data collection begins automatically when the results of a match you've played in are submitted.",
+    "",
+    "If you are comfortable with this, no further action is required. If not, please continue reading to review your available options and click the **Data Collection Options**.",
+    "",
+
+    "__If you want to opt out:__",
+    "- **Hide Score** Hides your score and rank from leaderboards and match displays across all servers.",
+    "    - This is preferred so your friends can still receive more accurate score adjustments when fighting you.",
+    "",
+    "- **Opt Out** Completely remove your data and stop all future data collection from all servers.",
+    "    - Your match history and rank are deleted, and the opt out preference will be saved with your Discord user Id.",
+    "",
+    "- **Delete All Data** Permanently delete all of your currently stored data, including your opt-out preference.",
+    "    - If you use APES again it will collect data again, because it will not know you or your preferences",
+    "",
+    "> To avoid collecting your score again after opting out, APES stores only your user ID to remember this preference.",
+    "> If you do not agree to having even this preference saved, delete your data and do not use the bot — using it implies agreement.",
+    "",
+    "__If you want to opt back in:__",
+    " - **Opt In** Will start saving your data and show your score again."
+  ]
+}
