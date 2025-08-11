@@ -45,9 +45,11 @@ namespace APES
             SocketGuild? guild = (component.Channel as SocketGuildChannel)?.Guild;
             if (guild == null) return;
 
-            await HandleHelpButtons(component, guild);
+            if (await HandleHelpButtons(component, guild))
+                return;
 
-            await HandleDataHelpButtons(component);
+            if (await HandleDataHelpButtons(component)) 
+                return;
 
             await HandleMatchButtons(component, guild);
         }
@@ -108,16 +110,18 @@ namespace APES
             }
         }
 
-        private static async Task HandleDataHelpButtons(SocketMessageComponent component)
+        private static async Task<bool> HandleDataHelpButtons(SocketMessageComponent component)
         {
             if (component.Data.CustomId == dataOptionsId)
             {
                 await component.RespondAsync("Choose your preference", ephemeral: true, components: ButtonFactory.BuildDataCollectionButtons());
+                return true;
             }
             else if (component.Data.CustomId == hideDataId)
             {
                 await DatabaseServices.HidePlayerScore(component.User);
                 await component.RespondAsync("Your rank and score are now hidden", ephemeral: true);
+                return true;
             }
             else if (component.Data.CustomId == optOutDataId)
             {
@@ -126,6 +130,8 @@ namespace APES
                     await component.RespondAsync("Your rank, match history, and username have been deleted.\nYour opt-out preference has been saved", ephemeral: true);
                 else
                     await component.RespondAsync("The user does not exist in the database", ephemeral: true);
+
+                return true;
             }
             else if (component.Data.CustomId == removeDataId)
             {
@@ -134,42 +140,55 @@ namespace APES
                     await component.RespondAsync("Your data has been deleted", ephemeral: true);
                 else
                     await component.RespondAsync("The user does not exist in the database", ephemeral: true);
+
+                return true;
             }
             else if (component.Data.CustomId == optInDataId)
             {
                 await DatabaseServices.OptInData(component.User);
                 await component.RespondAsync("Your data will now be saved.\nYour score and rank will be visible in leaderboards and match summaries from now on.", ephemeral: true);
+                return true;
             }
+
+            return false;
         }
 
-        private static async Task HandleHelpButtons(SocketMessageComponent component, SocketGuild? guild)
+        private static async Task<bool> HandleHelpButtons(SocketMessageComponent component, SocketGuild? guild)
         {
             GuildSettings? guildSettings = DatabaseServices.TryGetCachedGuildSettings(guild);
 
             if (component.Data.CustomId == closeHelpId)
             {
                 await component.Message.DeleteAsync();
+                return true;
             }
             else if (component.Data.CustomId == typeHelpId)
             {
                 await component.RespondAsync(embed: EmbedFactory.BuildHelpEmbed(guildSettings, Config.typeText), ephemeral: true);
+                return true;
             }
             else if (component.Data.CustomId == swapHelpId)
             {
                 await component.RespondAsync(embed: EmbedFactory.BuildHelpEmbed(guildSettings, Config.swapText), ephemeral: true);
+                return true;
             }
             else if (component.Data.CustomId == splitHelpId)
             {
                 await component.RespondAsync(embed: EmbedFactory.BuildHelpEmbed(guildSettings, Config.splitText), ephemeral: true);
+                return true;
             }
             else if (component.Data.CustomId == leadersHelpId)
             {
                 await component.RespondAsync(embed: EmbedFactory.BuildHelpEmbed(guildSettings, Config.leaderText), ephemeral: true);
+                return true;
             }
             else if (component.Data.CustomId == dataHelpId)
             {
                 await component.RespondAsync(embed: EmbedFactory.BuildHelpEmbed(guildSettings, Config.dataCollectionText), components: ButtonFactory.BuildDataHelpButtons(), ephemeral: true);
+                return true;
             }
+
+            return false;
         }
 
         private async Task OnJoinPressed(MatchInstance match, SocketMessageComponent component)
