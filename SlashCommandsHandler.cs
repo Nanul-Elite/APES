@@ -19,6 +19,10 @@ namespace APES
             await RespondAsync(embed: EmbedFactory.BuildHelpEmbed(guildSettings, Program.Config.helpText), components: ButtonFactory.BuildHelpButtons(true), ephemeral: true);
         }
 
+        //TODO: Settings Command - should open up a ephemeral buttons menu,
+        // - activating/deactivating text message command
+        // - activating/deactivating GG responces
+
         [SlashCommand("fight", "Start a defualt 2 teams match")]
         public async Task MatchTeamCount()
         {

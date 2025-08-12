@@ -2,198 +2,198 @@
 using APES.Data;
 using Discord;
 using Discord.WebSocket;
+using System;
 using System.Collections.Concurrent;
+using System.ComponentModel;
+using System.Text.RegularExpressions;
 using static APES.Program;
 
 namespace APES
 {
 	public class ButtonsHandler
 	{
-		public const string joinId = "join_match";
-		public const string leaveId = "leave_match";
-		public const string rollId = "roll_teams";
-		public const string startMatchId = "start_match";
-		public const string swapPlayersId = "swap_players";
-        public const string endMatchId = "end_match";
-        public const string removeMatchId = "remove_match";
-        public const string backId = "back";
-        public const string closeHelpId = "close_help";
-		public const string team1Id = "team1_win";
-        public const string team2Id = "team2_win";
-        public const string splitId = "split";
-        public const string typeHelpId = "typeHelp";
-        public const string swapHelpId = "swapHelp";
-        public const string leadersHelpId = "leadersHelp";
-        public const string splitHelpId = "splitHelp";
-        public const string dataHelpId = "dataHelp";
-        public const string hideDataId = "hideData";
-        public const string optOutDataId = "optOutData";
-        public const string optInDataId = "optInData";
-        public const string removeDataId = "removeData";
-        public const string dataOptionsId = "dataOptions";
+        public delegate Task ButtonHandler(SocketMessageComponent component);
+        private Dictionary<(string category, string action), ButtonHandler> _handlers = new();
 
         private ConcurrentDictionary<ulong, MatchInstance> _matches;
 
         public ButtonsHandler(ConcurrentDictionary<ulong, MatchInstance> matches)
         {
             _matches = matches;
+
+            _handlers = new Dictionary<(string category, string action), ButtonHandler>()
+            {
+                {(ButtonCategories.Match, MatchActions.Join), OnJoinPressed },
+                {(ButtonCategories.Match, MatchActions.Leave), OnLeavePressed },
+                {(ButtonCategories.Match, MatchActions.Roll), OnRollPressed },
+                {(ButtonCategories.Match, MatchActions.Remove), OnRemovePressed },
+                {(ButtonCategories.Match, MatchActions.Start), OnStartPressed },
+                {(ButtonCategories.Match, MatchActions.End), OnEndPressed },
+                {(ButtonCategories.Match, MatchActions.Swap), OnSwapPressed },
+                {(ButtonCategories.Match, MatchActions.Split), OnSplitPressed },
+                {(ButtonCategories.Match, MatchActions.Back), OnBackPressed },
+                {(ButtonCategories.Match, MatchActions.Team1), OnWinnerSelected },
+                {(ButtonCategories.Match, MatchActions.Team2), OnWinnerSelected },
+
+                {(ButtonCategories.Help, HelpActions.Type), OnTypeHelpPressed },
+                {(ButtonCategories.Help, HelpActions.Swap), OnSwapHelpPressed },
+                {(ButtonCategories.Help, HelpActions.Split), OnSplitHelpPressed },
+                {(ButtonCategories.Help, HelpActions.Leaders), OnLeadersHelpPressed },
+                {(ButtonCategories.Help, HelpActions.Data), OnDataHelpPressed },
+
+                {(ButtonCategories.Data, DataActions.Options), OnDataOptionsPressed },
+                {(ButtonCategories.Data, DataActions.OptIn), OnOptInDataPressed },
+                {(ButtonCategories.Data, DataActions.OptOut), OnOptOutDataPressed },
+                {(ButtonCategories.Data, DataActions.Hide), OnHideDataPressed },
+                {(ButtonCategories.Data, DataActions.Delete), OnDeleteDataPressed },
+
+                {(ButtonCategories.Common, CommonActions.Close), OnClosePressed },
+            };
         }
 
-        public async Task OnButtonExecuted(SocketMessageComponent component)
+        public async Task HandleButtonsAsync(SocketMessageComponent component)
         {
+            var parts = component.Data.CustomId.Split(':');
+            if (parts.Length < 2) return;
 
-            SocketGuild? guild = (component.Channel as SocketGuildChannel)?.Guild;
-            if (guild == null) return;
+            var category = parts[0];
+            var action = parts[1];
 
-            if (await HandleHelpButtons(component, guild))
-                return;
-
-            if (await HandleDataHelpButtons(component)) 
-                return;
-
-            await HandleMatchButtons(component, guild);
+            if (_handlers.TryGetValue((category, action), out var handler))
+            {
+                await handler(component);
+            }
         }
 
-        private async Task HandleMatchButtons(SocketMessageComponent component, SocketGuild guild)
+        private async Task<MatchInstance?> GetMatch(SocketMessageComponent component)
         {
-            SocketGuildUser guildUser = guild.GetUser(component.User.Id);
-
             if (!_matches.TryGetValue(component.Message.Id, out var match))
             {
                 await component.RespondAsync("Brawl not found or expired.");
-                return;
+                return null;
             }
-
-            if (component.Data.CustomId == joinId)
+            else
             {
-                await OnJoinPressed(match, component);
-            }
-            else if (component.Data.CustomId == leaveId)
-            {
-                await OnLeavePressed(match, component);
-            }
-            else if (guildUser != null && MatchServices.VarifyMatchPerm(match, guildUser))
-            {
-                if (component.Data.CustomId == rollId)
-                {
-                    await OnRollPressed(match, component);
-                }
-                else if (component.Data.CustomId == removeMatchId)
-                {
-                    await OnRemovePressed(component);
-                }
-                else if (component.Data.CustomId == startMatchId)
-                {
-                    await OnStartPressed(match, component);
-                }
-                else if (component.Data.CustomId == endMatchId && guildUser != null)
-                {
-                    await OnEndPressed(match, component);
-                }
-                else if (component.Data.CustomId == swapPlayersId && guildUser != null)
-                {
-                    await OnSwapPressed(match, component);
-                }
-                else if ((component.Data.CustomId == team1Id || component.Data.CustomId == team2Id) && guildUser != null)
-                {
-                    int winningTeam = component.Data.CustomId == team1Id ? 0 : 1;
-                    await OnWinnerSelected(winningTeam, match, component, guildUser);
-                }
-                else if (component.Data.CustomId == backId)
-                {
-                    await OnBackPressed(match, component);
-                }
-                else if (component.Data.CustomId == splitId)
-                {
-                    await OnSplitPressed(match, component);
-                }
+                return match;
             }
         }
 
-        private static async Task<bool> HandleDataHelpButtons(SocketMessageComponent component)
+        private (SocketGuild?, SocketGuildUser?) GetGuildAndGuildUser(SocketMessageComponent component)
         {
-            if (component.Data.CustomId == dataOptionsId)
-            {
-                await component.RespondAsync("Choose your preference", ephemeral: true, components: ButtonFactory.BuildDataCollectionButtons());
-                return true;
-            }
-            else if (component.Data.CustomId == hideDataId)
-            {
-                await DatabaseServices.HidePlayerScore(component.User);
-                await component.RespondAsync("Your rank and score are now hidden", ephemeral: true);
-                return true;
-            }
-            else if (component.Data.CustomId == optOutDataId)
-            {
-                bool succeeded = await DatabaseServices.RemoveAllPlayerData(component.User, true);
-                if (succeeded)
-                    await component.RespondAsync("Your rank, match history, and username have been deleted.\nYour opt-out preference has been saved", ephemeral: true);
-                else
-                    await component.RespondAsync("The user does not exist in the database", ephemeral: true);
+            SocketGuild? guild = (component.Channel as SocketGuildChannel)?.Guild;
+            if (guild == null) return (null, null);
 
-                return true;
-            }
-            else if (component.Data.CustomId == removeDataId)
-            {
-                bool succeeded = await DatabaseServices.RemoveAllPlayerData(component.User, false);
-                if (succeeded)
-                    await component.RespondAsync("Your data has been deleted", ephemeral: true);
-                else
-                    await component.RespondAsync("The user does not exist in the database", ephemeral: true);
-
-                return true;
-            }
-            else if (component.Data.CustomId == optInDataId)
-            {
-                await DatabaseServices.OptInData(component.User);
-                await component.RespondAsync("Your data will now be saved.\nYour score and rank will be visible in leaderboards and match summaries from now on.", ephemeral: true);
-                return true;
-            }
-
-            return false;
+            SocketGuildUser guildUser = guild.GetUser(component.User.Id);
+            return (guild, guildUser);
         }
 
-        private static async Task<bool> HandleHelpButtons(SocketMessageComponent component, SocketGuild? guild)
+        // Common Buttons
+        private async Task OnClosePressed(SocketMessageComponent component)
         {
+            await component.Message.DeleteAsync();
+        }
+
+        // Help Buttons
+        private async Task OnTypeHelpPressed(SocketMessageComponent component)
+        {
+            SocketGuild? guild = (component.Channel as SocketGuildChannel)?.Guild;
+            if (guild == null) return;
+
             GuildSettings? guildSettings = DatabaseServices.TryGetCachedGuildSettings(guild);
+            if (guildSettings == null) return;
 
-            if (component.Data.CustomId == closeHelpId)
-            {
-                await component.Message.DeleteAsync();
-                return true;
-            }
-            else if (component.Data.CustomId == typeHelpId)
-            {
-                await component.RespondAsync(embed: EmbedFactory.BuildHelpEmbed(guildSettings, Config.typeText), ephemeral: true);
-                return true;
-            }
-            else if (component.Data.CustomId == swapHelpId)
-            {
-                await component.RespondAsync(embed: EmbedFactory.BuildHelpEmbed(guildSettings, Config.swapText), ephemeral: true);
-                return true;
-            }
-            else if (component.Data.CustomId == splitHelpId)
-            {
-                await component.RespondAsync(embed: EmbedFactory.BuildHelpEmbed(guildSettings, Config.splitText), ephemeral: true);
-                return true;
-            }
-            else if (component.Data.CustomId == leadersHelpId)
-            {
-                await component.RespondAsync(embed: EmbedFactory.BuildHelpEmbed(guildSettings, Config.leaderText), ephemeral: true);
-                return true;
-            }
-            else if (component.Data.CustomId == dataHelpId)
-            {
-                await component.RespondAsync(embed: EmbedFactory.BuildHelpEmbed(guildSettings, Config.dataCollectionText), components: ButtonFactory.BuildDataHelpButtons(), ephemeral: true);
-                return true;
-            }
-
-            return false;
+            await component.RespondAsync(embed: EmbedFactory.BuildHelpEmbed(guildSettings, Config.typeText), ephemeral: true);
         }
 
-        private async Task OnJoinPressed(MatchInstance match, SocketMessageComponent component)
+        private async Task OnSplitHelpPressed(SocketMessageComponent component)
         {
-            if (!MatchServices.CheckVacancy(match)) return; // if max player has been reached
+            SocketGuild? guild = (component.Channel as SocketGuildChannel)?.Guild;
+            if (guild == null) return;
+
+            GuildSettings? guildSettings = DatabaseServices.TryGetCachedGuildSettings(guild);
+            if (guildSettings == null) return;
+
+            await component.RespondAsync(embed: EmbedFactory.BuildHelpEmbed(guildSettings, Config.splitText), ephemeral: true);
+        }
+
+        private async Task OnSwapHelpPressed(SocketMessageComponent component)
+        {
+            SocketGuild? guild = (component.Channel as SocketGuildChannel)?.Guild;
+            if (guild == null) return;
+
+            GuildSettings? guildSettings = DatabaseServices.TryGetCachedGuildSettings(guild);
+            if (guildSettings == null) return;
+
+            await component.RespondAsync(embed: EmbedFactory.BuildHelpEmbed(guildSettings, Config.swapText), ephemeral: true);
+        }
+
+        private async Task OnLeadersHelpPressed(SocketMessageComponent component)
+        {
+            SocketGuild? guild = (component.Channel as SocketGuildChannel)?.Guild;
+            if (guild == null) return;
+
+            GuildSettings? guildSettings = DatabaseServices.TryGetCachedGuildSettings(guild);
+            if (guildSettings == null) return;
+
+            await component.RespondAsync(embed: EmbedFactory.BuildHelpEmbed(guildSettings, Config.leaderText), ephemeral: true);
+        }
+
+        // Data Buttons
+        private async Task OnDataHelpPressed(SocketMessageComponent component)
+        {
+            SocketGuild? guild = (component.Channel as SocketGuildChannel)?.Guild;
+            if (guild == null) return;
+
+            GuildSettings? guildSettings = DatabaseServices.TryGetCachedGuildSettings(guild);
+            if (guildSettings == null) return;
+
+            await component.RespondAsync(embed: EmbedFactory.BuildHelpEmbed(guildSettings, Config.dataCollectionText), components: ButtonFactory.BuildDataHelpButtons(), ephemeral: true);
+        }
+
+        private async Task OnDataOptionsPressed(SocketMessageComponent component)
+        {
+            await component.RespondAsync("Choose your preference", ephemeral: true, components: ButtonFactory.BuildDataCollectionButtons());
+        }
+
+        private async Task OnHideDataPressed(SocketMessageComponent component)
+        {
+            await DatabaseServices.HidePlayerScore(component.User);
+            await component.RespondAsync("Your rank and score are now hidden", ephemeral: true);
+        }
+
+        private async Task OnOptOutDataPressed(SocketMessageComponent component)
+        {
+            bool succeeded = await DatabaseServices.RemoveAllPlayerData(component.User, true);
+            if (succeeded)
+                await component.RespondAsync("Your rank, match history, and username have been deleted.\nYour opt-out preference has been saved", ephemeral: true);
+            else
+                await component.RespondAsync("The user does not exist in the database", ephemeral: true);
+        }
+
+        private async Task OnDeleteDataPressed(SocketMessageComponent component)
+        {
+            bool succeeded = await DatabaseServices.RemoveAllPlayerData(component.User, false);
+            if (succeeded)
+                await component.RespondAsync("Your data has been deleted", ephemeral: true);
+            else
+                await component.RespondAsync("The user does not exist in the database", ephemeral: true);
+        }
+
+        private async Task OnOptInDataPressed(SocketMessageComponent component)
+        {
+            await DatabaseServices.OptInData(component.User);
+            await component.RespondAsync("Your data will now be saved.\nYour score and rank will be visible in leaderboards and match summaries from now on.", ephemeral: true);
+        }
+
+        // Match Buttons
+        private async Task OnJoinPressed(SocketMessageComponent component)
+        {
+            MatchInstance? match = await GetMatch(component);
+            if (match == null)
+                return;
+
+            if (!MatchServices.CheckVacancy(match))
+                return; // if max player has been reached
 
             bool isNewJoiner = !match.PlayerList.Contains(component.User.Id);
             ulong newJoinerId = component.User.Id;
@@ -213,8 +213,12 @@ namespace APES
             await match.Message.ModifyAsync(async m => m.Embed = await EmbedFactory.BuildMatchEmbed(match));
         }
 
-        private async Task OnLeavePressed(MatchInstance match, SocketMessageComponent component)
+        private async Task OnLeavePressed(SocketMessageComponent component)
 		{
+            MatchInstance? match = await GetMatch(component);
+            if (match == null)
+                return;
+
             if (match.PlayerList.Contains(component.User.Id))
                 match.PlayerList.Remove(component.User.Id);
 
@@ -233,8 +237,16 @@ namespace APES
             await match.Message.ModifyAsync(async m => { m.Embed = await EmbedFactory.BuildMatchEmbed(match); m.Components = ButtonFactory.BuildMatchButtons(match); });
         }
 
-        private async Task OnRollPressed(MatchInstance match, SocketMessageComponent component)
+        private async Task OnRollPressed(SocketMessageComponent component)
         {
+            MatchInstance? match = await GetMatch(component);
+            if (match == null) return;
+
+            (SocketGuild? guild, SocketGuildUser? guildUser) = GetGuildAndGuildUser(component);
+            if (guild == null || guildUser == null) return;
+
+            if (!MatchServices.VarifyMatchPerm(match, guildUser)) return;
+
             if (match.PlayerList.Count < 2)
             {
                 return;
@@ -250,8 +262,16 @@ namespace APES
             await match.Message.ModifyAsync(async m => { m.Embed = await EmbedFactory.BuildMatchEmbed(match); m.Components = ButtonFactory.BuildMatchButtons(match); });
         }
 
-        private async Task OnStartPressed(MatchInstance match, SocketMessageComponent component)
+        private async Task OnStartPressed(SocketMessageComponent component)
         {
+            MatchInstance? match = await GetMatch(component);
+            if (match == null) return;
+
+            (SocketGuild? guild, SocketGuildUser? guildUser) = GetGuildAndGuildUser(component);
+            if (guild == null || guildUser == null) return;
+
+            if (!MatchServices.VarifyMatchPerm(match, guildUser)) return;
+
             if (match.Teams.Count < 2)
             {
                 return;
@@ -266,8 +286,16 @@ namespace APES
             await match.Message.ModifyAsync(async m => { m.Embed = await EmbedFactory.BuildMatchEmbed(match); m.Components = ButtonFactory.BuildMatchButtons(match); });
         }
 
-        private async Task OnEndPressed(MatchInstance match, SocketMessageComponent component)
+        private async Task OnEndPressed(SocketMessageComponent component)
         {
+            MatchInstance? match = await GetMatch(component);
+            if (match == null) return;
+
+            (SocketGuild? guild, SocketGuildUser? guildUser) = GetGuildAndGuildUser(component);
+            if (guild == null || guildUser == null) return;
+
+            if (!MatchServices.VarifyMatchPerm(match, guildUser)) return;
+
             var timeoutMinutes = 60;
             match.TimeoutAt = DateTime.UtcNow.AddMinutes(timeoutMinutes);
 
@@ -281,8 +309,16 @@ namespace APES
             await match.Message.ModifyAsync(async m => { m.Embed = await EmbedFactory.BuildMatchEmbed(match); m.Components = ButtonFactory.BuildMatchButtons(match); });
         }
 
-        private async Task OnSwapPressed(MatchInstance match, SocketMessageComponent component)
+        private async Task OnSwapPressed(SocketMessageComponent component)
         {
+            MatchInstance? match = await GetMatch(component);
+            if (match == null) return;
+            
+            (SocketGuild? guild, SocketGuildUser? guildUser) = GetGuildAndGuildUser(component);
+            if (guild == null || guildUser == null) return;
+
+            if (!MatchServices.VarifyMatchPerm(match, guildUser)) return;
+
             var modal = new ModalBuilder()
                     .WithTitle("Swap Players")
                     .WithCustomId($"{match.matchId}")
@@ -293,11 +329,27 @@ namespace APES
 
         private async Task OnRemovePressed(SocketMessageComponent component)
 		{
+            MatchInstance? match = await GetMatch(component);
+            if (match == null) return;
+
+            (SocketGuild? guild, SocketGuildUser? guildUser) = GetGuildAndGuildUser(component);
+            if (guild == null || guildUser == null) return;
+
+            if (!MatchServices.VarifyMatchPerm(match, guildUser)) return;
+
             await MatchServices.RemoveMatchAsync(component.Message, _matches);
         }
 
-        private async Task OnBackPressed(MatchInstance match, SocketMessageComponent component)
+        private async Task OnBackPressed(SocketMessageComponent component)
         {
+            MatchInstance? match = await GetMatch(component);
+            if (match == null) return;
+
+            (SocketGuild? guild, SocketGuildUser? guildUser) = GetGuildAndGuildUser(component);
+            if (guild == null || guildUser == null) return;
+
+            if (!MatchServices.VarifyMatchPerm(match, guildUser)) return;
+
             var timeoutMinutes = 60;
             match.TimeoutAt = DateTime.UtcNow.AddMinutes(timeoutMinutes);
 
@@ -307,22 +359,39 @@ namespace APES
             await match.Message.ModifyAsync(async m => { m.Embed =  await EmbedFactory.BuildMatchEmbed(match); m.Components = ButtonFactory.BuildMatchButtons(match); });
         }
 
-        private async Task OnSplitPressed(MatchInstance match, SocketMessageComponent component)
+        private async Task OnSplitPressed(SocketMessageComponent component)
         {
+            MatchInstance? match = await GetMatch(component);
+            if (match == null) return;
+
+            (SocketGuild? guild, SocketGuildUser? guildUser) = GetGuildAndGuildUser(component);
+            if (guild == null || guildUser == null) return;
+
+            if (!MatchServices.VarifyMatchPerm(match, guildUser)) return;
+
             await MatchServices.SplitMatch(match, component.Message, _matches);
 
             await component.DeferAsync();
             await match.Message.ModifyAsync(async m => { m.Embed = await EmbedFactory.BuildMatchEmbed(match); m.Components = ButtonFactory.BuildMatchButtons(match); });
         }
 
-        private async Task OnWinnerSelected(int winningTeam, MatchInstance match, SocketMessageComponent component, SocketGuildUser guildUser)
+        private async Task OnWinnerSelected(SocketMessageComponent component)
         {
+            MatchInstance? match = await GetMatch(component);
+            if (match == null) return;
+            
+            int winningTeam = component.Data.CustomId == $"{ButtonCategories.Match}:{MatchActions.Team1}" ? 0 : 1;
+
+            SocketGuild? guild = (component.Channel as SocketGuildChannel)?.Guild;
+            if (guild == null) return;
+
+            SocketGuildUser guildUser = guild.GetUser(component.User.Id);
+
             int losingTeam = Math.Abs(winningTeam - 1);
             bool acceptVote = guildUser.GuildPermissions.Administrator || guildUser.GuildPermissions.ModerateMembers || match.Teams[losingTeam].Contains(guildUser.Id);
             if (acceptVote)
             {
-                SocketGuild guild = guildUser.Guild;
-                ulong guildId = guildUser.Guild.Id;
+                ulong guildId = guild.Id;
                 GuildData? guildData = await DatabaseServices.GetGuildData(guildId);
                 if (guildData == null) return;
 

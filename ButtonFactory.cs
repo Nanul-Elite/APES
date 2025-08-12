@@ -9,23 +9,25 @@ namespace APES
         {
             var componentBuilder = new ComponentBuilder();
 
+            string prefix = ButtonCategories.Match;
+
             if(match.state == MatchState.open || match.state == MatchState.rolled)
             {
                 if(match.preTeams == false)
-                    componentBuilder.WithButton("Join Match", ButtonsHandler.joinId, ButtonStyle.Success, row: 0, emote: new Emoji("✅"));
-                componentBuilder.WithButton("Leave Match", ButtonsHandler.leaveId, ButtonStyle.Danger, row: 0, emote: new Emoji("✖️"));
+                    componentBuilder.WithButton("Join Match", $"{prefix}:{MatchActions.Join}", ButtonStyle.Success, row: 0, emote: new Emoji("✅"));
+                componentBuilder.WithButton("Leave Match", $"{prefix}:{MatchActions.Leave}", ButtonStyle.Danger, row: 0, emote: new Emoji("✖️"));
 
-                componentBuilder.WithButton("Roll Teams", ButtonsHandler.rollId, ButtonStyle.Primary, row: 1, emote: new Emoji("🎲"));
-                componentBuilder.WithButton("Close Match", ButtonsHandler.removeMatchId, ButtonStyle.Secondary, row: 1, emote: new Emoji("🚫"));
+                componentBuilder.WithButton("Roll Teams", $"{prefix}:{MatchActions.Roll}", ButtonStyle.Primary, row: 1, emote: new Emoji("🎲"));
+                componentBuilder.WithButton("Close Match", $"{prefix}:{MatchActions.Remove}", ButtonStyle.Secondary, row: 1, emote: new Emoji("🚫"));
 
                 if(match.state == MatchState.rolled && match.Teams.Count == 2)
                 {
-                    componentBuilder.WithButton("Swap Players", ButtonsHandler.swapPlayersId, ButtonStyle.Secondary, row: 2, emote: new Emoji("🔀"));
-                    componentBuilder.WithButton("Start Match", ButtonsHandler.startMatchId, ButtonStyle.Primary, row: 2, emote: new Emoji("🚩"));
+                    componentBuilder.WithButton("Swap Players", $"{prefix}:{MatchActions.Swap}", ButtonStyle.Secondary, row: 2, emote: new Emoji("🔀"));
+                    componentBuilder.WithButton("Start Match", $"{prefix}:{MatchActions.Start}", ButtonStyle.Primary, row: 2, emote: new Emoji("🚩"));
                 }
                 else if (match.Teams.Count > 2)
                 {
-                    componentBuilder.WithButton("Split", ButtonsHandler.splitId, ButtonStyle.Secondary, row: 2, emote: new Emoji("↔️"));
+                    componentBuilder.WithButton("Split", $"{prefix}:{MatchActions.Split}", ButtonStyle.Secondary, row: 2, emote: new Emoji("↔️"));
                 }
 
                 if(match.preTeams == true)
@@ -42,23 +44,23 @@ namespace APES
             }
             else if(match.state == MatchState.locked)
             {
-                componentBuilder.WithButton("Back", ButtonsHandler.backId, ButtonStyle.Secondary, row: 0, emote: new Emoji("⬅️"));
-                componentBuilder.WithButton("Close Match", ButtonsHandler.removeMatchId, ButtonStyle.Secondary, row: 0, emote: new Emoji("🚫"));
+                componentBuilder.WithButton("Back", $"{prefix}:{MatchActions.Back}", ButtonStyle.Secondary, row: 0, emote: new Emoji("⬅️"));
+                componentBuilder.WithButton("Close Match", $"{prefix}:{MatchActions.Remove}", ButtonStyle.Secondary, row: 0, emote: new Emoji("🚫"));
 
-                componentBuilder.WithButton("End Match", ButtonsHandler.endMatchId, ButtonStyle.Primary, row: 1, emote: new Emoji("🏁"));
+                componentBuilder.WithButton("End Match", $"{prefix}:{MatchActions.End}", ButtonStyle.Primary, row: 1, emote: new Emoji("🏁"));
             }
             else if (match.state == MatchState.waitingForResults)
             {
-                componentBuilder.WithButton("Back", ButtonsHandler.backId, ButtonStyle.Secondary, row: 0, emote: new Emoji("⬅️"));
+                componentBuilder.WithButton("Back", $"{prefix}:{MatchActions.Back}", ButtonStyle.Secondary, row: 0, emote: new Emoji("⬅️"));
 
-                componentBuilder.WithButton("Team 1", ButtonsHandler.team1Id, ButtonStyle.Secondary, row: 1, emote: new Emoji("1️⃣"));
-                componentBuilder.WithButton("Team 2", ButtonsHandler.team2Id, ButtonStyle.Secondary, row: 1, emote: new Emoji("2️⃣"));
+                componentBuilder.WithButton("Team 1", $"{prefix}:{MatchActions.Team1}", ButtonStyle.Secondary, row: 1, emote: new Emoji("1️⃣"));
+                componentBuilder.WithButton("Team 2", $"{prefix}:{MatchActions.Team2}", ButtonStyle.Secondary, row: 1, emote: new Emoji("2️⃣"));
             }
             else if (match.state == MatchState.done)
             {
-                componentBuilder.WithButton("Back", ButtonsHandler.backId, ButtonStyle.Secondary, row: 0, emote: new Emoji("⬅️"));
-                componentBuilder.WithButton("Roll Teams", ButtonsHandler.rollId, ButtonStyle.Primary, row: 0, emote: new Emoji("🎲"));
-                componentBuilder.WithButton("Close Match", ButtonsHandler.removeMatchId, ButtonStyle.Secondary, row: 0, emote: new Emoji("🚫"));
+                componentBuilder.WithButton("Back", $"{prefix}:{MatchActions.Back}", ButtonStyle.Secondary, row: 0, emote: new Emoji("⬅️"));
+                componentBuilder.WithButton("Roll Teams", $"{prefix}:{MatchActions.Roll}", ButtonStyle.Primary, row: 0, emote: new Emoji("🎲"));
+                componentBuilder.WithButton("Close Match", $"{prefix}:{MatchActions.Remove}", ButtonStyle.Secondary, row: 0, emote: new Emoji("🚫"));
             }
 
             return componentBuilder.Build();
@@ -66,32 +68,35 @@ namespace APES
 
         public static MessageComponent BuildCloseButton()
         {
-            return new ComponentBuilder().WithButton("Close", ButtonsHandler.closeHelpId, ButtonStyle.Secondary).Build();
+            return new ComponentBuilder().WithButton("Close", $"{ButtonCategories.Common}:{CommonActions.Close}", ButtonStyle.Secondary).Build();
         }
 
         public static MessageComponent BuildHelpButtons(bool ephemeral = false)
         {
+            string prefix = ButtonCategories.Help;
             var componentBuilder = new ComponentBuilder();
-            componentBuilder.WithButton("Match Types", ButtonsHandler.typeHelpId, ButtonStyle.Secondary, row: 0).Build();
-            componentBuilder.WithButton("Swap Players", ButtonsHandler.swapHelpId, ButtonStyle.Secondary, row: 0).Build();
-            componentBuilder.WithButton("Split Large Matchs", ButtonsHandler.splitHelpId, ButtonStyle.Secondary, row: 0).Build();
-            componentBuilder.WithButton("Leader Board", ButtonsHandler.leadersHelpId, ButtonStyle.Secondary, row: 0).Build();
+            componentBuilder.WithButton("Match Types", $"{prefix}:{HelpActions.Type}", ButtonStyle.Secondary, row: 0).Build();
+            componentBuilder.WithButton("Swap Players", $"{prefix}:{HelpActions.Swap}", ButtonStyle.Secondary, row: 0).Build();
+            componentBuilder.WithButton("Split Large Matchs", $"{prefix}:{HelpActions.Split}", ButtonStyle.Secondary, row: 0).Build();
+            componentBuilder.WithButton("Leader Board", $"{prefix}:{HelpActions.Leaders}", ButtonStyle.Secondary, row: 0).Build();
 
-            componentBuilder.WithButton("Data Collection", ButtonsHandler.dataHelpId, ButtonStyle.Secondary, row: 1).Build();
+            componentBuilder.WithButton("Data Collection", $"{prefix}:{HelpActions.Data}", ButtonStyle.Secondary, row: 1).Build();
 
             if(!ephemeral)
-                componentBuilder.WithButton("Close", ButtonsHandler.closeHelpId, ButtonStyle.Secondary, row: 2).Build();
+                componentBuilder.WithButton("Close", $"{ButtonCategories.Common}:{CommonActions.Close}", ButtonStyle.Secondary, row: 2).Build();
 
             return componentBuilder.Build();
         }
 
         public static MessageComponent BuildDataCollectionButtons()
         {
+            string prefix = ButtonCategories.Data;
+
             var componentBuilder = new ComponentBuilder();
-            componentBuilder.WithButton("Hide Score", ButtonsHandler.hideDataId, ButtonStyle.Success, row: 0).Build();
-            componentBuilder.WithButton("Opt Out", ButtonsHandler.optOutDataId, ButtonStyle.Secondary, row: 0).Build();
-            componentBuilder.WithButton("Delete All Data", ButtonsHandler.removeDataId, ButtonStyle.Danger, row: 0).Build();
-            componentBuilder.WithButton("Opt In", ButtonsHandler.optInDataId, ButtonStyle.Primary, row: 0).Build();
+            componentBuilder.WithButton("Hide Score", $"{prefix}:{DataActions.Hide}", ButtonStyle.Success, row: 0).Build();
+            componentBuilder.WithButton("Opt Out", $"{prefix}:{DataActions.OptOut}", ButtonStyle.Secondary, row: 0).Build();
+            componentBuilder.WithButton("Delete All Data", $"{prefix}:{DataActions.Delete}", ButtonStyle.Danger, row: 0).Build();
+            componentBuilder.WithButton("Opt In", $"{prefix}:{DataActions.OptIn}", ButtonStyle.Primary, row: 0).Build();
 
             return componentBuilder.Build();
         }
@@ -99,7 +104,7 @@ namespace APES
         public static MessageComponent BuildDataHelpButtons()
         {
             var componentBuilder = new ComponentBuilder();
-            componentBuilder.WithButton("Data Collection Options", ButtonsHandler.dataOptionsId, ButtonStyle.Primary, row: 0).Build();
+            componentBuilder.WithButton("Data Collection Options", $"{ButtonCategories.Data}:{DataActions.Options}", ButtonStyle.Primary, row: 0).Build();
             return componentBuilder.Build();
         }
     }

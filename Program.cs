@@ -89,7 +89,7 @@ namespace APES
 
             _client.MessageReceived += _messageHandler.OnMessageReceived;
             _client.ModalSubmitted += _messageHandler.OnModalSubmitted;
-            _client.ButtonExecuted += _buttonsHandler.OnButtonExecuted;
+            _client.ButtonExecuted += _buttonsHandler.HandleButtonsAsync;
             _client.SelectMenuExecuted += _selectionMenuHandler.HandleDropdownAsync;
             _client.JoinedGuild += GuildUtils.OnJoinCheckAndLeaveIfNotApproved;
         }
