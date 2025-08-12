@@ -33,7 +33,7 @@ namespace APES
 
         private InteractionService _interactions;
 
-        public const string version = "0.5.5";
+        public const string version = "0.5.6";
         public const ulong FakeIdThreshold = 5_000_000_000_000_000_000;
 
         public static IServiceProvider? services;
