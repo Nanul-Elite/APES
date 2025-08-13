@@ -2,6 +2,8 @@
 using Discord.Interactions;
 using Discord.WebSocket;
 using System.Text.RegularExpressions;
+using APES.Data;
+using Discord;
 
 namespace APES
 {
@@ -19,9 +21,24 @@ namespace APES
             await RespondAsync(embed: EmbedFactory.BuildHelpEmbed(guildSettings, Program.Config.helpText), components: ButtonFactory.BuildHelpButtons(true), ephemeral: true);
         }
 
-        //TODO: Settings Command - should open up a ephemeral buttons menu,
-        // - activating/deactivating text message command
-        // - activating/deactivating GG responces
+        [SlashCommand("use_reactions", "Should the APES respond to various trigger words like GG")]
+        [DefaultMemberPermissions(GuildPermission.Administrator)]
+        public async Task SetUseReactions([Summary(description: "Activate or Deactivate reactions")] bool useReactions)
+        {
+            GuildSettings? settings = await DatabaseServices.GetGuildSettingsAsync(Context.Guild);
+            GuildSettings? cachedSettings = DatabaseServices.TryGetCachedGuildSettings(Context.Guild);
+
+            if (settings == null) return;
+
+            settings.UseReactions = useReactions;
+
+            if(cachedSettings != null)
+                cachedSettings.UseReactions = useReactions;
+
+            await DatabaseServices.SaveDB();
+
+            await RespondAsync($"Reactions are {(useReactions ? "On" : "Off")}");
+        }
 
         [SlashCommand("fight", "Start a defualt 2 teams match")]
         public async Task MatchTeamCount()

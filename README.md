@@ -15,9 +15,7 @@ The config file is also where you can change the text command prefix, edit help 
 
 ---
 
-## TODO/Work In Progress:
-- Guild Setting UI & Logic
-- Opt-in for Text Commands (make it off by default)
+## TODO & Work In Progress:
 - Match Booking for guild members driven training/practice (match by requested time slots & type, with context metadata) 
 - Tournaments - Single/Double Elimination, Swiss, Season ELO with Match Booking
 

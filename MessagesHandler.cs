@@ -25,6 +25,8 @@ namespace APES
 
             Data.GuildSettings? guildSettings = DatabaseServices.TryGetCachedGuildSettings(guild);
 
+            if (guildSettings == null) return;
+
             string cmdChar = guildSettings != null ? guildSettings.CommandChar : Config.commandTriggers.commandChar;
             string[] startList = guildSettings != null ? guildSettings.StartMatchKeywords : Config.commandTriggers.startMatch;
             string[] helpList = guildSettings != null ? guildSettings.HelpKeywords : Config.commandTriggers.help;
@@ -42,7 +44,7 @@ namespace APES
             {
                 await message.Channel.SendMessageAsync(embed: EmbedFactory.BuildHelpEmbed(guildSettings, Config.helpText), components: ButtonFactory.BuildHelpButtons());
             }
-            else if (Config.useReactions && CheckMessageForKeywords(Config.defaultReactionTriggerWords, message.Content))
+            else if (guildSettings.UseReactions && CheckMessageForKeywords(Config.defaultReactionTriggerWords, message.Content))
                 // this part is disabled because there is no way for the Admins to edit the guild settings yet
                 //((guildSettings == null && CheckMessageForKeywords(Config.defaultReactionTriggerWords, message.Content)))
                 // ||  (guildSettings != null && CheckForBotReactions(guildSettings.BotReactions, message.Content, out responses)))
