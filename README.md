@@ -6,7 +6,16 @@ APES supports both `/` commands & simple text commands.
 
 ---
 
-## APES Config
+## To Invite APES
+To Invite APES to your server click the link: [Invite APES](https://discord.com/oauth2/authorize?client_id=1389232903539523594&permissions=2147502080&integration_type=0&scope=bot)
+- By default, APES does not have the `View Channel` permission. What it can see and read depends on your server’s configuration & roles.
+- To enable text commands, grant the APES role the `View Channel` permission in the channels where you want it to operate.
+- To disable GG reactions, use the `/use_reactions` command and select `False`. APES will then stop reacting to GGs sent by users.
+- You can control where and by whom slash commands are available through your server’s Integrations settings.
+
+---
+
+## APES Config - For APES Copies
 
 To use your own version of APES, you need to obtain a bot token from the Discord Developer Portal and paste it into the config file.  
 Then place the config file in the **Data** folder of the **built** project.
