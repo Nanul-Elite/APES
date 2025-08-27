@@ -6,18 +6,20 @@ using System.Threading.Tasks;
 
 namespace APES
 {
-    public static class ButtonCategories
+    public static class ComponentCategories
     {
         public const string Match = "match";
         public const string Help = "help";
         public const string Data = "data";
         public const string Settigns = "settings";
         public const string Common = "common";
+        public const string SessionRequest = "session_request";
     }
 
     public static class CommonActions
     {
         public const string Close = "close";
+        public const string Back = "back";
     }
 
     public static class MatchActions
@@ -30,7 +32,6 @@ namespace APES
         public const string End = "end";
         public const string Swap = "swap";
         public const string Split = "split";
-        public const string Back = "back";
         public const string Team1 = "team1";
         public const string Team2 = "team2";
     }
@@ -57,5 +58,18 @@ namespace APES
     {
         public const string TextCommands = "text_commands";
         public const string UseReactions = "use_reactions";
+    }
+
+    public static class SessionRequestActions
+    {
+        public const string Anonymous = "anonymous";
+        public const string TimeZone = "time_zone";
+        public const string Date = "date";
+        public const string StartTime = "start_time";
+        public const string Duration = "duration";
+        public const string Type = "session_type";
+        public const string Level = "level";
+        public const string Add = "add";
+        public const string Remove = "remove";
     }
 }

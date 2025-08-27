@@ -1,10 +1,12 @@
 ﻿// APES is free and open-source software licensed under AGPL-3.0. See LICENSE file for details.
 using APES.Data;
 using Discord;
+using Discord.Interactions;
 using Discord.WebSocket;
 using System;
 using System.Collections.Concurrent;
 using System.ComponentModel;
+using System.IO;
 using System.Text.RegularExpressions;
 using static APES.Program;
 
@@ -23,31 +25,36 @@ namespace APES
 
             _handlers = new Dictionary<(string category, string action), ButtonHandler>()
             {
-                {(ButtonCategories.Match, MatchActions.Join), OnJoinPressed },
-                {(ButtonCategories.Match, MatchActions.Leave), OnLeavePressed },
-                {(ButtonCategories.Match, MatchActions.Roll), OnRollPressed },
-                {(ButtonCategories.Match, MatchActions.Remove), OnRemovePressed },
-                {(ButtonCategories.Match, MatchActions.Start), OnStartPressed },
-                {(ButtonCategories.Match, MatchActions.End), OnEndPressed },
-                {(ButtonCategories.Match, MatchActions.Swap), OnSwapPressed },
-                {(ButtonCategories.Match, MatchActions.Split), OnSplitPressed },
-                {(ButtonCategories.Match, MatchActions.Back), OnBackPressed },
-                {(ButtonCategories.Match, MatchActions.Team1), OnWinnerSelected },
-                {(ButtonCategories.Match, MatchActions.Team2), OnWinnerSelected },
+                {(ComponentCategories.Match, MatchActions.Join), OnJoinPressed },
+                {(ComponentCategories.Match, MatchActions.Leave), OnLeavePressed },
+                {(ComponentCategories.Match, MatchActions.Roll), OnRollPressed },
+                {(ComponentCategories.Match, MatchActions.Remove), OnMatchRemovePressed },
+                {(ComponentCategories.Match, MatchActions.Start), OnStartPressed },
+                {(ComponentCategories.Match, MatchActions.End), OnEndPressed },
+                {(ComponentCategories.Match, MatchActions.Swap), OnSwapPressed },
+                {(ComponentCategories.Match, MatchActions.Split), OnSplitPressed },
+                {(ComponentCategories.Match, CommonActions.Back), OnBackPressed },
+                {(ComponentCategories.Match, MatchActions.Team1), OnWinnerSelected },
+                {(ComponentCategories.Match, MatchActions.Team2), OnWinnerSelected },
 
-                {(ButtonCategories.Help, HelpActions.Type), OnTypeHelpPressed },
-                {(ButtonCategories.Help, HelpActions.Swap), OnSwapHelpPressed },
-                {(ButtonCategories.Help, HelpActions.Split), OnSplitHelpPressed },
-                {(ButtonCategories.Help, HelpActions.Leaders), OnLeadersHelpPressed },
-                {(ButtonCategories.Help, HelpActions.Data), OnDataHelpPressed },
+                {(ComponentCategories.Help, HelpActions.Type), OnTypeHelpPressed },
+                {(ComponentCategories.Help, HelpActions.Swap), OnSwapHelpPressed },
+                {(ComponentCategories.Help, HelpActions.Split), OnSplitHelpPressed },
+                {(ComponentCategories.Help, HelpActions.Leaders), OnLeadersHelpPressed },
+                {(ComponentCategories.Help, HelpActions.Data), OnDataHelpPressed },
 
-                {(ButtonCategories.Data, DataActions.Options), OnDataOptionsPressed },
-                {(ButtonCategories.Data, DataActions.OptIn), OnOptInDataPressed },
-                {(ButtonCategories.Data, DataActions.OptOut), OnOptOutDataPressed },
-                {(ButtonCategories.Data, DataActions.Hide), OnHideDataPressed },
-                {(ButtonCategories.Data, DataActions.Delete), OnDeleteDataPressed },
+                {(ComponentCategories.Data, DataActions.Options), OnDataOptionsPressed },
+                {(ComponentCategories.Data, DataActions.OptIn), OnOptInDataPressed },
+                {(ComponentCategories.Data, DataActions.OptOut), OnOptOutDataPressed },
+                {(ComponentCategories.Data, DataActions.Hide), OnHideDataPressed },
+                {(ComponentCategories.Data, DataActions.Delete), OnDeleteDataPressed },
 
-                {(ButtonCategories.Common, CommonActions.Close), OnClosePressed },
+                {(ComponentCategories.SessionRequest, SessionRequestActions.Date), OnRequestDatePressed },
+                {(ComponentCategories.SessionRequest, SessionRequestActions.Add), OnRequestAddTimeSlot },
+                {(ComponentCategories.SessionRequest, SessionRequestActions.Remove), OnRequestRemoveTimeSlot },
+                {(ComponentCategories.SessionRequest, CommonActions.Back), OnRequestBackPressed },
+
+                {(ComponentCategories.Common, CommonActions.Close), OnClosePressed },
             };
         }
 
@@ -327,7 +334,7 @@ namespace APES
             await component.RespondWithModalAsync(modal.Build());
         }
 
-        private async Task OnRemovePressed(SocketMessageComponent component)
+        private async Task OnMatchRemovePressed(SocketMessageComponent component)
 		{
             MatchInstance? match = await GetMatch(component);
             if (match == null) return;
@@ -380,7 +387,7 @@ namespace APES
             MatchInstance? match = await GetMatch(component);
             if (match == null) return;
             
-            int winningTeam = component.Data.CustomId == $"{ButtonCategories.Match}:{MatchActions.Team1}" ? 0 : 1;
+            int winningTeam = component.Data.CustomId == $"{ComponentCategories.Match}:{MatchActions.Team1}" ? 0 : 1;
 
             SocketGuild? guild = (component.Channel as SocketGuildChannel)?.Guild;
             if (guild == null) return;
@@ -447,6 +454,98 @@ namespace APES
             {
                 await component.RespondAsync("Only the losing team, mods or admins can set the result");
             }
+        }
+
+        // Session Request
+        private Modal OpenDateTimeModal(SocketMessageComponent component, string duration = null, string time = null)
+        {
+            var modal = new ModalBuilder()
+                        .WithTitle("Select Start Time & Duration")
+                        .WithCustomId($"{component.Data.CustomId}")
+                        .AddTextInput("Start Time", SessionRequestActions.StartTime, placeholder: "12:00 - type an hour in a 24 hours clock HH:MM", value: time)
+                        .AddTextInput("Duration", SessionRequestActions.Duration, placeholder: "2:30 - as in 2 hours and 30 min, hours:minutes", value: duration);
+
+            return modal.Build();
+        }
+
+        private async Task OnRequestDatePressed(SocketMessageComponent component)
+        {
+            // check if slot exist, if so send an ephermal message to check if its an edit or an addition
+            var parts = component.Data.CustomId.Split(':');
+            if (parts.Length < 3) return;
+            string guid = parts[2];
+            string date = parts[3];
+            string original = component.Message.Id.ToString();
+
+            if(requestsInSetup.TryGetValue(guid, out var request))
+            {
+                if(request.TimeSlots.Any(ts => ts.Date == date))
+                {
+                    string messageText = "Do you want to add, remove or modify these time slots?";
+                    await component.RespondAsync(messageText, components: ButtonFactory.CreateModifyDateButtons(request, date, original), ephemeral: true);
+                    return;
+                }
+            }
+
+            await component.RespondWithModalAsync(OpenDateTimeModal(component));
+        }
+
+        private async Task OnRequestAddTimeSlot(SocketMessageComponent component)
+        {
+            await component.RespondWithModalAsync(OpenDateTimeModal(component));
+            await component.DeleteOriginalResponseAsync();
+        }
+
+        private async Task OnRequestRemoveTimeSlot(SocketMessageComponent component)
+        {
+            var parts = component.Data.CustomId.Split(':');
+            if (parts.Length < 3) return;
+            string guid = parts[2];
+            string date = parts[3];
+            string start = parts[4] + ":" + parts[5];
+
+            if (requestsInSetup.TryGetValue(guid, out var request))
+            {
+                request.TimeSlots.RemoveAll(ts => ts.Date == date && ts.Start == start);
+                if (requestUserEphemerals.TryGetValue(request.Guid, out var inter))
+                {
+                    await component.DeferAsync();
+                    await inter.ModifyOriginalResponseAsync(m => { m.Embed = EmbedFactory.BuildSessionRequestEmbed(request); m.Components = ButtonFactory.BuildSessionRequestButtons(request); });
+                }
+            }
+
+            await component.DeleteOriginalResponseAsync();
+        }
+
+        private async Task OnRequestStartTimePressed(SocketMessageComponent component)
+        {
+            var modal = new ModalBuilder()
+                    .WithTitle("Select Start Time")
+                    .WithCustomId($"{component.Data.CustomId}")
+                    .AddTextInput("Start Time", SessionRequestActions.StartTime, placeholder: "12:00 - type an hour in a 24 hours clock HH:MM");
+
+            await component.RespondWithModalAsync(modal.Build());
+        }
+
+        private async Task OnRequestBackPressed(SocketMessageComponent component)
+        {
+            if (component.Data.CustomId.StartsWith(ComponentCategories.SessionRequest))
+            {
+                var parts = component.Data.CustomId.Split(':');
+                if (parts.Length < 3) return;
+
+                var dropdown = parts[1];
+                var guid = parts[2];
+
+                if (requestsInSetup.TryGetValue(guid, out var request))
+                {
+                    request.TimeZone = null;
+                }
+
+                await component.UpdateAsync(m => { m.Embed = EmbedFactory.BuildSessionRequestEmbed(request); m.Components = ButtonFactory.BuildSessionRequestButtons(request); });
+            }
+            
+            await component.DeferAsync();
         }
     }
 }

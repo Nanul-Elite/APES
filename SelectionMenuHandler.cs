@@ -17,19 +17,59 @@ namespace APES
 
         public async Task HandleDropdownAsync(SocketMessageComponent component)
         {
-            if (!_matches.TryGetValue(component.Message.Id, out var match))
-            {
-                await component.RespondAsync("Brawl not found or expired.");
-                return;
-            }
-
             if (component.Data.CustomId == teamSelectID)
             {
-                await OnTeamSelected(match, component);
+                if(_matches.TryGetValue(component.Message.Id, out var match))
+                {
+                    await OnTeamSelected(match, component);
+                    await match.Message.ModifyAsync(async m => { m.Embed = await EmbedFactory.BuildMatchEmbed(match); m.Components = ButtonFactory.BuildMatchButtons(match); });
+                }
+                else
+                {
+                    await component.RespondAsync("Brawl not found or expired.");
+                }
+            }
+
+            if(component.Data.CustomId.StartsWith(ComponentCategories.SessionRequest))
+            {
+                var parts = component.Data.CustomId.Split(':');
+                if (parts.Length < 3) return;
+
+                var dropdown = parts[1];
+                var guid = parts[2];
+
+                if(Program.requestsInSetup.TryGetValue(guid, out var request))
+                {
+                    //if(dropdown == SessionRequestActions.Anonymous)
+                    //{
+                    //    request.Anonymous = bool.Parse(component.Data.Values.First());
+                    //}
+                    if (dropdown == SessionRequestActions.TimeZone)
+                    {
+                        request.TimeZone = component.Data.Values.First();
+                    }
+                    //else if (dropdown == SessionRequestActions.Date)
+                    //{
+                    //    request.Date = component.Data.Values.First();
+                    //}
+                    //else if(dropdown == SessionRequestActions.Duration)
+                    //{
+                    //    request.Duration = component.Data.Values.First();
+                    //}
+                    else if(dropdown == SessionRequestActions.Type)
+                    {
+                        request.SessionType = component.Data.Values.First();
+                    }
+                    else if(dropdown == SessionRequestActions.Level)
+                    {
+                        request.ExperienceLevel = int.Parse(component.Data.Values.First());
+                    }
+
+                    await component.UpdateAsync(m => { m.Embed = EmbedFactory.BuildSessionRequestEmbed(request); m.Components = ButtonFactory.BuildSessionRequestButtons(request); });
+                }
             }
 
             await component.DeferAsync();
-            await match.Message.ModifyAsync(async m => { m.Embed = await EmbedFactory.BuildMatchEmbed(match); m.Components = ButtonFactory.BuildMatchButtons(match); });
         }
 
         private async Task OnTeamSelected(MatchInstance match, SocketMessageComponent component)

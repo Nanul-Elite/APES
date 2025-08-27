@@ -1,7 +1,10 @@
 ﻿// APES is free and open-source software licensed under AGPL-3.0. See LICENSE file for details.
 using APES.Data;
 using Discord;
+using Discord.Net;
 using Discord.WebSocket;
+using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace APES
 {
@@ -167,6 +170,52 @@ namespace APES
             embedBuilder.AddField("Winners:", winnersList, true);
             embedBuilder.AddField("vs", "\u200B​", true);
             embedBuilder.AddField("Losers:", losersList, true);
+
+            return embedBuilder.Build();
+        }
+    
+        public static Embed BuildSessionRequestEmbed(SessionRequest request)
+        {
+            var embedBuilder = new EmbedBuilder();
+
+            embedBuilder.WithColor(Color.Blue);
+            embedBuilder.WithTitle("Session Request");
+
+            var expireUnix = new DateTimeOffset(DateTime.Parse(request.ExpireDateTime, null, System.Globalization.DateTimeStyles.AssumeUniversal | System.Globalization.DateTimeStyles.AdjustToUniversal)).ToUnixTimeSeconds();
+            string text = $"Setup will expire <t:{expireUnix}:R>\n\n";
+
+            text += $"Session Type: {request.SessionType}\n";
+
+            if(request.SessionType == "Practice")
+            {
+                text += $"Expirience Level: {Enum.GetName(typeof(BookingServices.SessionLevel), request.ExperienceLevel)}\n";
+                //text += $"Anonymous: {(request.Anonymous ? "Yes" : "No")}\n";
+            }
+
+            text += $"Time Zone: {request.TimeZone}\n";
+
+            foreach(var slot in request.TimeSlots)
+            {
+                string startTimeText = "";
+                string endTimeText = "";
+                DateTime date = DateTime.ParseExact(slot.Date, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+                TimeSpan startTime = TimeSpan.ParseExact(slot.Start, "hh\\:mm", CultureInfo.InvariantCulture);
+
+                DateTime startDateTime = DateTime.SpecifyKind(date.Date + startTime, DateTimeKind.Utc);
+                long startUnix = new DateTimeOffset(startDateTime).ToUnixTimeSeconds();
+                startTimeText = $"<t:{startUnix}:F>";// <t:{startUnix}:R>";
+
+                var duration = TimeSpan.Parse(slot.Duration);
+                DateTime endDateTime = startDateTime.Add(duration);
+                long endUnix = new DateTimeOffset(endDateTime).ToUnixTimeSeconds();
+                endTimeText = $"<t:{endUnix}:t>";
+
+                text += $"- {startTimeText} -> {endTimeText}\n";
+            }
+
+            // add tournamets/level detalis
+
+            embedBuilder.WithDescription(text);
 
             return embedBuilder.Build();
         }

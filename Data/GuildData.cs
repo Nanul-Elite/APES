@@ -84,4 +84,48 @@ namespace APES.Data
         public int GuildSettingsId { get; set; }
         public GuildSettings? GuildSettings { get; set; }
     }
+
+    public class SessionRequest
+    {
+        public int Id { get; set; }
+        public string Guid { get; set; }
+        public ulong UserId { get; set; } // Discord Snowflake
+        public bool Saved { get; set; }
+        public string ExpireDateTime { get; set; }
+
+        public List<TimeSlot> TimeSlots { get; set; }
+
+        public string TimeZone { get; set; }
+        public string SessionType { get; set; } 
+        public int ExperienceLevel { get; set; } 
+        public int TournamentId { get; set; } 
+
+        public int GuildDataId { get; set; } 
+        public GuildData? GuildData { get; set; } 
+    }
+
+    public class TimeSlot
+    {
+        public int Id { get; set; }
+        public string Date { get; set; }
+        public string Start { get; set; }
+        public string Duration { get; set; }
+
+        public int SessionRequestId { get; set; }
+        public SessionRequest SessionRequest { get; set; }
+    }
+
+    public class SessionMatch
+    {
+        public int Id { get; set; }
+
+        List<int> MatchedRequestIds { get; set; }
+
+        public string Date { get; set; }
+        public string StartTime { get; set; }
+        public string TimeSpan { get; set; }
+
+        public int GuildDataId { get; set; }
+        public GuildData? GuildData { get; set; }
+    }
 }

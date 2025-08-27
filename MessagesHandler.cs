@@ -1,7 +1,13 @@
 ﻿// APES is free and open-source software licensed under AGPL-3.0. See LICENSE file for details.
+using Discord.Net;
 using Discord.WebSocket;
+using NodaTime.Text;
+using NodaTime;
 using System.Collections.Concurrent;
+using System.ComponentModel;
 using static APES.Program;
+using System.Globalization;
+using Discord;
 
 namespace APES
 {
@@ -69,6 +75,7 @@ namespace APES
 
         public async Task OnModalSubmitted(SocketModal modal)
         {
+            // first try to get match ID as this is the most common use case
             MatchInstance match = _matches.FirstOrDefault(m => m.Value.matchId == modal.Data.CustomId).Value;
 
             if (match != null)
@@ -85,8 +92,78 @@ namespace APES
 
                 await MatchServices.HandleSwapModalMessage(index1, index2, match);
             }
+            else
+            {
+                var modalIdSplit = modal.Data.CustomId.Split(':');
+                if(modalIdSplit.Length > 2 && (modalIdSplit[1] == SessionRequestActions.Date || modalIdSplit[1] == SessionRequestActions.Add))
+                {
+                    string guid = modalIdSplit[2];
+                    string dateText = modalIdSplit[3];
+                    string messageIdText = modalIdSplit.Length == 5 ? modalIdSplit[4] : null;
+
+                    if (requestsInSetup.TryGetValue(guid, out var request))
+                    {
+                        var slot = request.TimeSlots.FirstOrDefault(ts => ts.Date == dateText);
+                        if (modalIdSplit[1] == SessionRequestActions.Add)
+                            slot = null;
+
+                        string startTime = modal.Data.Components.First(x => x.CustomId == SessionRequestActions.StartTime).Value;
+                        string duration = modal.Data.Components.First(x => x.CustomId == SessionRequestActions.Duration).Value;
+                        string[] formats = { "h\\:mm", "hh\\:mm", "H\\:mm", "HH\\:mm" };
+                        if (TimeSpan.TryParseExact(startTime, formats, null, out TimeSpan parsedStart) && TimeSpan.TryParseExact(duration, formats, null, out TimeSpan parsedDuration))
+                        {
+                            if (slot == null)
+                            {
+                                slot = new Data.TimeSlot();
+                                slot.Date = dateText;
+                                request.TimeSlots.Add(slot);
+                            }
+                            slot.Start = GetUTCTime(slot.Date, parsedStart.ToString(@"hh\:mm"), request.TimeZone);
+                            slot.Duration = parsedDuration.ToString(@"hh\:mm");
+
+                            if(modalIdSplit[1] == SessionRequestActions.Add)
+                            {
+                                if(requestUserEphemerals.TryGetValue(request.Guid, out var inter))
+                                {
+                                    await inter.ModifyOriginalResponseAsync(m => { m.Embed = EmbedFactory.BuildSessionRequestEmbed(request); m.Components = ButtonFactory.BuildSessionRequestButtons(request); });
+                                    await modal.DeferAsync();
+                                    await modal.DeleteOriginalResponseAsync();
+                                }
+                            }
+                            else
+                            {
+                                await modal.UpdateAsync(m => { m.Embed = EmbedFactory.BuildSessionRequestEmbed(request); m.Components = ButtonFactory.BuildSessionRequestButtons(request); }) ;
+                            }
+                        }
+                        else
+                        {
+                            await modal.RespondAsync($"❌ Invalid time format: `{startTime}`. Please enter the time in HH:mm format (e.g., 14:30).", ephemeral: true);
+                            return;
+                        }
+                    }
+                }
+            }
 
             await modal.DeferAsync();
+        }
+
+        private string GetUTCTime(string date, string time, string timeZoneId)
+        {
+            // Parse the stored date and time
+            var localDate = LocalDatePattern.Iso.Parse(date).Value;
+            var localTime = LocalTimePattern.CreateWithInvariantCulture("HH:mm").Parse(time).Value;
+
+            // Combine into a LocalDateTime
+            var localDateTime = localDate + localTime;
+
+            // Get the Noda Time zone
+            var zone = DateTimeZoneProviders.Tzdb[timeZoneId];
+
+            // Convert to UTC Instant
+            var utcInstant = localDateTime.InZoneLeniently(zone).ToInstant();
+            var utcTime = utcInstant.InUtc().TimeOfDay;
+
+            return LocalTimePattern.CreateWithInvariantCulture("HH:mm").Format(utcTime); 
         }
 
         private bool CheckMessageForKeywords(string[] keywordsArray, string message, string prefix = "")

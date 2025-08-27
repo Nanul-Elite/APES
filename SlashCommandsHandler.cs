@@ -96,5 +96,14 @@ namespace APES
             }
             
         }
+
+        [SlashCommand("request_session", "Set a time for a session that other can join you")]
+        public async Task RequestSession()
+        {
+            SessionRequest request = BookingServices.CreateRequest(Context.User.Id);
+
+            Program.requestUserEphemerals.TryAdd(request.Guid, Context.Interaction);
+            await RespondAsync(embed: EmbedFactory.BuildSessionRequestEmbed(request), components: ButtonFactory.BuildSessionRequestButtons(request), ephemeral: true);
+        }
     }
 }

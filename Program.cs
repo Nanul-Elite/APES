@@ -10,11 +10,14 @@ using System.Reflection;
 
 namespace APES
 {
+    //https://discord.com/oauth2/authorize?client_id=1408660979453001880&permissions=2147567616&integration_type=0&scope=bot
     internal class Program
     {
         private DiscordSocketClient _client;
 
         private ConcurrentDictionary<ulong, MatchInstance> _matches = new();
+        private ConcurrentDictionary<string, SessionRequest> _requestsInSetup = new();
+        private ConcurrentDictionary<string, SocketInteraction> _requestUserEphemerals = new();
         private ConfigData? _config;
         private string _databasePath = "";
         private string _configPath = "";
@@ -22,6 +25,9 @@ namespace APES
         public static ConfigData Config => I._config;
         public static DiscordSocketClient Client => I._client;
         public static ConcurrentDictionary<ulong, MatchInstance> matches => I._matches;
+        public static ConcurrentDictionary<string, SessionRequest> requestsInSetup => I._requestsInSetup;
+        public static ConcurrentDictionary<string, SocketInteraction> requestUserEphemerals => I._requestUserEphemerals;
+
         public static Program I;
 
         private ButtonsHandler _buttonsHandler;
@@ -76,6 +82,9 @@ namespace APES
             {
                 GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent
             });
+
+            _requestsInSetup = new ConcurrentDictionary<string, SessionRequest>();
+            _requestUserEphemerals = new ConcurrentDictionary<string, SocketInteraction>();
 
             _interactions = new InteractionService(_client.Rest);
             _client.Ready += OnReady;
