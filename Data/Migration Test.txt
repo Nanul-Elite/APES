@@ -1,0 +1,109 @@
+﻿public partial class TournamentRefactor : Migration
+{
+    protected override void Up(MigrationBuilder migrationBuilder)
+    {
+        // 1. Drop HelpKeywords
+        migrationBuilder.DropColumn(
+            name: "HelpKeywords",
+            table: "GuildSettings");
+
+        // 2. Create Team table
+        migrationBuilder.CreateTable(
+            name: "Teams",
+            columns: table => new
+            {
+                Id = table.Column<int>(nullable: false)
+                          .Annotation("Sqlite:Autoincrement", true),
+                Name = table.Column<string>(nullable: true),
+                TournamentDataId = table.Column<int>(nullable: false),
+                Rank = table.Column<int>(nullable: false),
+                MatchesWon = table.Column<int>(nullable: false),
+                MatchesLost = table.Column<int>(nullable: false)
+            },
+            constraints: table =>
+            {
+                table.PrimaryKey("PK_Teams", x => x.Id);
+                table.ForeignKey(
+                    name: "FK_Teams_TournamentDatas_TournamentDataId",
+                    column: x => x.TournamentDataId,
+                    principalTable: "TournamentDatas",
+                    principalColumn: "Id",
+                    onDelete: ReferentialAction.Cascade);
+            });
+
+        // 3. Add TeamId to Participant
+        migrationBuilder.AddColumn<int>(
+            name: "TeamId",
+            table: "Participants",
+            nullable: false,
+            defaultValue: 0);
+
+        // 4. Remove moved columns from Participant
+        migrationBuilder.DropColumn(name: "Rank", table: "Participants");
+        migrationBuilder.DropColumn(name: "MatchesWon", table: "Participants");
+        migrationBuilder.DropColumn(name: "MatchesLost", table: "Participants");
+
+        // 5. Create TournamentMatch table
+        migrationBuilder.CreateTable(
+            name: "TournamentMatches",
+            columns: table => new
+            {
+                Id = table.Column<int>(nullable: false)
+                          .Annotation("Sqlite:Autoincrement", true),
+                TournamentDataId = table.Column<int>(nullable: false),
+                State = table.Column<int>(nullable: false),
+                WinnerIdx = table.Column<int>(nullable: false),
+                VideoUrls = table.Column<string>(nullable: true) // EF Core will handle List<string> via converter
+            },
+            constraints: table =>
+            {
+                table.PrimaryKey("PK_TournamentMatches", x => x.Id);
+                table.ForeignKey(
+                    name: "FK_TournamentMatches_TournamentDatas_TournamentDataId",
+                    column: x => x.TournamentDataId,
+                    principalTable: "TournamentDatas",
+                    principalColumn: "Id",
+                    onDelete: ReferentialAction.Cascade);
+            });
+
+        // 6. TournamentMatch-Team many-to-many join table
+        migrationBuilder.CreateTable(
+            name: "TournamentMatchTeam",
+            columns: table => new
+            {
+                TournamentMatchId = table.Column<int>(nullable: false),
+                TeamId = table.Column<int>(nullable: false)
+            },
+            constraints: table =>
+            {
+                table.PrimaryKey("PK_TournamentMatchTeam", x => new { x.TournamentMatchId, x.TeamId });
+                table.ForeignKey(
+                    name: "FK_TournamentMatchTeam_Teams_TeamId",
+                    column: x => x.TeamId,
+                    principalTable: "Teams",
+                    principalColumn: "Id",
+                    onDelete: ReferentialAction.Cascade);
+                table.ForeignKey(
+                    name: "FK_TournamentMatchTeam_TournamentMatches_TournamentMatchId",
+                    column: x => x.TournamentMatchId,
+                    principalTable: "TournamentMatches",
+                    principalColumn: "Id",
+                    onDelete: ReferentialAction.Cascade);
+            });
+
+        // 7. Data migration: Participants → Teams
+        migrationBuilder.Sql(@"
+            INSERT INTO Teams (TournamentDataId, Rank, MatchesWon, MatchesLost)
+            SELECT TournamentDataId, Rank, MatchesWon, MatchesLost
+            FROM Participants;
+
+            UPDATE Participants
+            SET TeamId = (SELECT Id FROM Teams WHERE Teams.TournamentDataId = Participants.TournamentDataId LIMIT 1);
+        ");
+    }
+
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
+        // Reverse operations (drop new tables, add removed columns back, etc.)
+    }
+}

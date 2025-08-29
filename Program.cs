@@ -18,7 +18,9 @@ namespace APES
         private ConfigData? _config;
         private string _databasePath = "";
         private string _configPath = "";
+        public ApesDbContext _db;
 
+        public static ApesDbContext DB => I._db;
         public static ConfigData Config => I._config;
         public static DiscordSocketClient Client => I._client;
         public static ConcurrentDictionary<ulong, MatchInstance> matches => I._matches;

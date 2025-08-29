@@ -29,7 +29,7 @@ namespace APES
 
             string cmdChar = guildSettings != null ? guildSettings.CommandChar : Config.commandTriggers.commandChar;
             string[] startList = guildSettings != null ? guildSettings.StartMatchKeywords : Config.commandTriggers.startMatch;
-            string[] helpList = guildSettings != null ? guildSettings.HelpKeywords : Config.commandTriggers.help;
+            string[] helpList = Config.commandTriggers.help;
             string[] responses = Config.defaultResponses;
 
             if (CheckMessageForKeywords(startList, message.Content, cmdChar))

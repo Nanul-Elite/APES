@@ -139,6 +139,15 @@ namespace APES
             return embedBuilder.Build();
         }
 
+        /// <summary>
+        /// This function is ised in the regular matches, that does not use the TeamData from the DB
+        /// </summary>
+        /// <param name="winningTeam"></param>
+        /// <param name="losingTeam"></param>
+        /// <param name="score"></param>
+        /// <param name="expected"></param>
+        /// <param name="guildId"></param>
+        /// <returns></returns>
         public static async  Task<Embed> BuildMatchEndEmbed(List<Participant> winningTeam, List<Participant> losingTeam, int score, float expected, ulong guildId)
         {
             var embedBuilder = new EmbedBuilder().WithTitle($"Match Scores: {score}").WithDescription($"-# Expected Win Rate: {expected * 100:0}% / {(1f-expected) * 100:0}%");

@@ -96,5 +96,27 @@ namespace APES
             }
             
         }
+
+        [SlashCommand("create_tournament", "Create a new tournament")]
+        public async Task CreateTournament(
+            string name,
+            TournamentType type,
+            int teamSize,
+            [Summary(description: "UTC(game time) as yyyy-MM-dd HH:mm - e.g: 2025-08-26 17:36")]
+            string? startDate = null,
+            [Summary(description: "UTC(game time) as yyyy-MM-dd HH:mm - e.g: 2025-08-26 17:36")]
+            string? endDate = null,
+            [Summary(description: "UTC(game time) as yyyy-MM-dd HH:mm - e.g: 2025-08-26 17:36")]
+            string? closeSignup = null,
+            string description = "",
+            int minMatches = 0,
+            int maxMatches = 999,
+            float maxRankGap = 0,
+            int rankGapMatchesThreshold = 0,
+            int sameOpponentLimit = 0,
+            float sameOpponenReset = 0)
+        {
+
+        }
     }
 }

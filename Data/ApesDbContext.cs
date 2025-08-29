@@ -12,6 +12,10 @@ namespace APES.Data
     {
         public DbSet<GuildData> Guilds { get; set; }
         public DbSet<DiscordUserData> DiscordUserDatas { get; set; }
+        public DbSet<GuildSettings> GuildSettings{ get; set; } // New DBset
+        public DbSet<TournamentData> TournamentDatas { get; set; } // New DBset
+        public DbSet<TournamentMatch> TournamentMatches { get; set; } // New DBset
+        public DbSet<TournamentChallange> TournamentChallanges { get; set; } // New DBset
 
         public ApesDbContext(DbContextOptions<ApesDbContext> options)
             : base(options) { }

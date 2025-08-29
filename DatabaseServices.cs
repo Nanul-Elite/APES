@@ -36,7 +36,7 @@ namespace APES
         {
             if (guild == null) return null;
 
-            GuildSettings? dbSettings = DB.Guilds
+            GuildSettings? dbSettings = DB.Guilds!
                 .Include(g => g.GuildSettings).ThenInclude(s => s.BotReactions)
                 .Include(g => g.GuildSettings).ThenInclude(s => s.RolePermissions)
                 .FirstOrDefault(g => g.GuildId == guild.Id).GuildSettings;
@@ -44,7 +44,6 @@ namespace APES
             GuildSettings cache = new GuildSettings()
             {
                 CommandChar = dbSettings.CommandChar,
-                HelpKeywords = dbSettings.HelpKeywords,
                 StartMatchKeywords = dbSettings.StartMatchKeywords,
                 UseReactions = dbSettings.UseReactions
             };
@@ -92,18 +91,34 @@ namespace APES
                 GuildId = guild.Id,
                 Name = guild.Name,
                 MaxTournaments = 1,
-                Tournamens = new List<TournamentData>() 
-                { 
-                    new TournamentData 
+                Tournaments = new List<TournamentData>()
+                {
+                    new TournamentData()
                     {
-                        Participants = new List<Participant>() 
-                    } 
+                        Name = "Server Leaderboard",
+                        Description = "The Default Server Leaderboard",
+                        Type = 0,
+                        TeamSize = 0,
+                        MinMatches = 0,
+                        MaxMatches = 0,
+                        MaxRankGap = 0,
+                        RankGapMatchesThreshold = 0,
+                        SameOpponentLimit = 0,
+                        SameOpponenReset = 0,
+                        Start = null,
+                        End = null,
+                        CloseSignup = null,
+
+                        Participants = new List<Participant>(),
+                        Teams = new List<TeamData>(),
+                        TournamentMatch = new List<TournamentMatch>(),
+                        TournamentChallanges = new List<TournamentChallange>()
+                    }
                 },
                 GuildSettings = new GuildSettings()
                 {
                     CommandChar = Config.commandTriggers.commandChar,
                     StartMatchKeywords = Config.commandTriggers.startMatch,
-                    HelpKeywords = Config.commandTriggers.help,
                     UseReactions = Config.useReactions,
                     RolePermissions = new List<RolePermission>(),
                     BotReactions = new List<Reaction>()
@@ -128,12 +143,10 @@ namespace APES
 
         public static async Task<GuildSettings?> GetGuildSettingsAsync(SocketGuild guild)
         {
-            return await DB.Guilds
-                .Include(g => g.GuildSettings).ThenInclude(s => s.BotReactions)
-                .Include(g => g.GuildSettings).ThenInclude(s => s.RolePermissions)
-                .Where(g => g.GuildId == guild.Id)
-                .Select(g => g.GuildSettings)
-                .FirstOrDefaultAsync();
+            return await DB.GuildSettings
+                            .Include(s => s.BotReactions)
+                            .Include(s => s.RolePermissions)
+                            .FirstOrDefaultAsync(s => s.GuildData!.GuildId == guild.Id);
         }
 
         public static GuildSettings? TryGetCachedGuildSettings(SocketGuild guild)
@@ -150,27 +163,27 @@ namespace APES
         public static async Task<TournamentData?> GetFullTournamentDataAsync(ulong guildId, int tournamentIndex = 0)
         {
             var guild = await DB.Guilds
-                                .Include(g => g.Tournamens!)
+                                .Include(g => g.Tournaments!)
                                     .ThenInclude(t => t.Participants)
                                 .FirstOrDefaultAsync(g => g.GuildId == guildId);
 
-            if (guild == null || guild.Tournamens == null || tournamentIndex < 0 || tournamentIndex >= guild.Tournamens.Count)
+            if (guild == null || guild.Tournaments == null || tournamentIndex < 0 || tournamentIndex >= guild.Tournaments.Count)
                 return null;
 
-            return guild.Tournamens[tournamentIndex];
+            return guild.Tournaments[tournamentIndex];
         }
 
         public static async Task<List<Participant>?> GetTournamentParticipantsDataAsync(ulong guildId, int tournamentIndex = 0)
         {
             var guild = await DB.Guilds
-                                .Include(g => g.Tournamens!)
-                                    .ThenInclude(t => t.Participants)
+                                .Include(g => g.Tournaments!)
+                                    .ThenInclude(t => t.Participants!)
                                 .FirstOrDefaultAsync(g => g.GuildId == guildId);
 
-            if (guild == null || guild.Tournamens == null || tournamentIndex < 0 || tournamentIndex >= guild.Tournamens.Count)
+            if (guild == null || guild.Tournaments == null || tournamentIndex < 0 || tournamentIndex >= guild.Tournaments.Count)
                 return null;
 
-            return guild.Tournamens[tournamentIndex].Participants;
+            return guild.Tournaments[tournamentIndex].Participants!.ToList();
         }
 
         /// <summary>
@@ -324,7 +337,7 @@ namespace APES
             if (userData == null) return;
 
             var guilds = await DB.Guilds
-                .Include(g => g.Tournamens!)
+                .Include(g => g.Tournaments!)
                     .ThenInclude(t => t.Participants!)
                 .ToListAsync();
 
@@ -332,7 +345,7 @@ namespace APES
 
             foreach (var guild in guilds)
             {
-                foreach (var tournament in guild.Tournamens!)
+                foreach (var tournament in guild.Tournaments!)
                 {
                     var toRemove = tournament.Participants!
                         .Where(p => p.DiscordUserDataId == userData.Id)
