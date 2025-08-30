@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using APES.Data;
 using Discord.Interactions;
 using System.Reflection;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace APES
 {
@@ -67,6 +68,8 @@ namespace APES
                 var db = scope.ServiceProvider.GetRequiredService<ApesDbContext>();
                 bool created = db.Database.EnsureCreated();
             }
+            _db = services.GetRequiredService<ApesDbContext>();
+
 
             if (_config == null || string.IsNullOrEmpty(_config.token))
             {
@@ -126,11 +129,36 @@ namespace APES
         {
             await _interactions.AddModulesAsync(Assembly.GetEntryAssembly(), null);
             await _interactions.RegisterCommandsGloballyAsync();
+            await _interactions.RegisterCommandsToGuildAsync(1070780697909936228);
+            await _interactions.RegisterCommandsToGuildAsync(1381183683138031669);
         }
 
         private async Task HandleInteraction(SocketInteraction interaction)
         {
             var context = new SocketInteractionContext(_client, interaction);
+
+            if (interaction is SocketAutocompleteInteraction auto)
+            {
+                if ((auto.Data.CommandName == "remove_tournament") && auto.Data.Current.Name == "tournament")
+                {
+                    var focused = auto.Data.Current.Value?.ToString() ?? "";
+
+                    // Get the current guild's ID
+                    ulong guildId = auto.GuildId ?? 0;
+
+                    // Fetch tournaments for this guild only
+                    var results = DB.TournamentDatas.ToList()
+                        .Where(t => t.GuildData!.GuildId == guildId &&
+                                    t.Name!.Contains(focused, StringComparison.OrdinalIgnoreCase))
+                        .Take(25)
+                        .Select(t => new AutocompleteResult(t.Name, t.Id));
+
+
+                    await auto.RespondAsync(results);
+                }
+                return;
+            }
+
             await _interactions.ExecuteCommandAsync(context, null);
         }
 

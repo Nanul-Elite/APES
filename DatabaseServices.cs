@@ -93,27 +93,11 @@ namespace APES
                 MaxTournaments = 1,
                 Tournaments = new List<TournamentData>()
                 {
-                    new TournamentData()
-                    {
-                        Name = "Server Leaderboard",
-                        Description = "The Default Server Leaderboard",
-                        Type = 0,
-                        TeamSize = 0,
-                        MinMatches = 0,
-                        MaxMatches = 0,
-                        MaxRankGap = 0,
-                        RankGapMatchesThreshold = 0,
-                        SameOpponentLimit = 0,
-                        SameOpponenReset = 0,
-                        Start = null,
-                        End = null,
-                        CloseSignup = null,
-
-                        Participants = new List<Participant>(),
-                        Teams = new List<TeamData>(),
-                        TournamentMatch = new List<TournamentMatch>(),
-                        TournamentChallanges = new List<TournamentChallange>()
-                    }
+                    TournamentServices.CreateTournamentData(
+                        "Server Leaderboard",
+                        "The Default Server Leaderboard",
+                        TournamentType.Default,
+                        TournamentState.Started),
                 },
                 GuildSettings = new GuildSettings()
                 {

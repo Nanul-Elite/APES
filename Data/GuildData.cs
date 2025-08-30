@@ -23,7 +23,6 @@ namespace APES.Data
         // Data
         public int Id { get; set; }
         public string CommandChar { get; set; }
-        //public string[] HelpKeywords { get; set; } // remove this property, no need to store it, no need to allow changes here
         public string[] StartMatchKeywords { get; set; }
         public List<RolePermission>? RolePermissions { get; set; }
         public bool UseReactions { get; set; }
@@ -46,12 +45,28 @@ namespace APES.Data
         public string? Name { get; set; } // Added
         public string? Description { get; set; } // Added
 
+        public int State { get; set; }
         // Single Elimination, Season etc... Should match an enum
         public int Type { get; set; } // Added
         public int TeamSize { get; set; } // Added
-        public int MinMatches { get; set; } // Added
-        public int MaxMatches { get; set; } // Added
 
+        // This set of Min & Max matches are to prevent a bias twards players who have a lot of time to play a lot of matches
+        // The Timeframe limit set a limit of how many matches a participant/team can have in a given time frame, the time frame resets every TimeframeLimit
+        public int MinMatches { get; set; } // Added
+        /// <summary>
+        /// Max matches for the entire tournament per participant
+        /// </summary>
+        public int MaxMatches { get; set; } // Added
+        /// <summary>
+        /// Max matches for the timeframe, per participant
+        /// </summary>
+        public int MaxMatchesPerTimeframe { get; set; } // Added
+        /// <summary>
+        /// Timeframe in days, for the MaxTimeframeLimit
+        /// </summary>
+        public int TimeFrameLimit { get; set; } // Added
+
+        // To prevent High ranking players from farming low ranking players for scores
         /// <summary>
         /// The allowed gap between 2 participants, as a percentage of the Ranks range in the tournament
         /// </summary>
@@ -60,6 +75,8 @@ namespace APES.Data
         /// After how many matches should the Gap limit start to apply
         /// </summary>
         public int? RankGapMatchesThreshold { get; set; } // Added
+
+        // To encourage higher score spread
         /// <summary>
         /// How many times a player can fight the same opponent
         /// </summary>
@@ -68,6 +85,10 @@ namespace APES.Data
         /// When to rest the SameOpponentLimit, a percentage of the available opponents pool, once the threshold is reached the limit is removed
         /// </summary>
         public float? SameOpponenReset { get; set; } // Added
+
+        public int EloMaxPointsChange { get; set; } // Added
+        public int EloScale {  get; set; } // Added
+        public int EloStartScore { get; set; } // Added
 
         public DateTime? Start {  get; set; } // Added
         public DateTime? CloseSignup { get; set; } // Added
@@ -98,6 +119,7 @@ namespace APES.Data
         public string? Name { get; set; }
         public List<Participant>? Members { get; set; }
         public List<TournamentMatch>? TournamentMatches { get; set; }
+        public List<LoadoutData>? Loadouts { get; set; }
 
         public int Rank { get; set; }
         public int MatchesWon { get; set; }
@@ -105,6 +127,17 @@ namespace APES.Data
 
         public int TournamentDataId { get; set; }
         public TournamentData? TournamentData { get; set; }
+    }
+
+    public class LoadoutData // new class Added
+    {
+        public int Id { get; set; }
+        public Participant? Participant { get; set; }
+        public string? Ship {  get; set; }
+        public string? Loadout {  get; set; }
+
+        public int TeamDataId { get; set; }
+        public TeamData? TeamData { get; set; }
     }
 
     public class TournamentMatch // New Class Added

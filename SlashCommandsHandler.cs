@@ -4,6 +4,7 @@ using Discord.WebSocket;
 using System.Text.RegularExpressions;
 using APES.Data;
 using Discord;
+using System.Globalization;
 
 namespace APES
 {
@@ -94,13 +95,41 @@ namespace APES
                 await RespondAsync($"Specify a valid format #v#, 3v3, 1v2 etc...", ephemeral: true);
                 return;
             }
-            
+
         }
 
         [SlashCommand("create_tournament", "Create a new tournament")]
-        public async Task CreateTournament(
-            string name,
-            TournamentType type,
+        public async Task CreateTournament(string name, string description, TournamentType type)
+        {
+            await DeferAsync();
+            var tournamentData = TournamentServices.CreateTournamentData(name, description, type, TournamentState.InSetup);
+            tournamentData.GuildDataId = Program.DB.Guilds.First(g => g.GuildId == Context.Guild.Id).Id;
+
+            Program.DB.TournamentDatas.Add(tournamentData);
+            await Program.DB.SaveChangesAsync();
+
+            await FollowupAsync($"Created Tournament {name}");
+        }
+
+        [SlashCommand("remove_tournament", "Remove a tournament")]
+        public async Task RemoveTournament([Autocomplete]int tournament)
+        {
+            await DeferAsync();
+            var touny = Program.DB.TournamentDatas.FirstOrDefault(t => t.Id == tournament);
+            string name = "";
+            if (touny != null)
+            {
+                name = touny.Name!;
+                Program.DB.TournamentDatas.Remove(touny);
+            }
+
+            await Program.DB.SaveChangesAsync();
+
+            await FollowupAsync($"Tournament {name} Deleted");
+        }
+    }
+}
+/*
             int teamSize,
             [Summary(description: "UTC(game time) as yyyy-MM-dd HH:mm - e.g: 2025-08-26 17:36")]
             string? startDate = null,
@@ -114,9 +143,18 @@ namespace APES
             float maxRankGap = 0,
             int rankGapMatchesThreshold = 0,
             int sameOpponentLimit = 0,
-            float sameOpponenReset = 0)
-        {
+            float sameOpponenReset = 0
 
-        }
-    }
-}
+            DateTime? start = null;
+            if (startDate != null) 
+                start = DateTime.ParseExact(startDate, "yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+
+            DateTime? end = null;
+            if (startDate != null)
+                end = DateTime.ParseExact(endDate, "yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+
+            DateTime? signupClose = null;
+            if (startDate != null)
+                signupClose = DateTime.ParseExact(closeSignup, "yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+
+*/

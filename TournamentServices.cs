@@ -15,40 +15,27 @@ namespace APES
         DoubleElimination = 3,
     }
 
+    public enum TournamentState
+    {
+        InSetup = 0,
+        Started = 1,
+        Closed = 2,
+    }
+
     public class TournamentServices
     {
-        public static async Task<TournamentData> CreateTournamentData(
-            int guildDataId,
+        public static TournamentData CreateTournamentData(
             string name, 
+            string description,
             TournamentType type, 
-            int teamSize, 
-            DateTime? startDate = null,
-            DateTime? endDate = null,
-            DateTime? closeSignup = null,
-            string description = "", 
-            int minMatches = 0, 
-            int maxMatches = 999, 
-            float maxRankGap = 0, 
-            int rankGapMatchesThreshold = 0, 
-            int sameOpponentLimit = 0,
-            float sameOpponenReset = 0)
+            TournamentState state = TournamentState.InSetup)
         {
             var tournament = new TournamentData()
             {
-                GuildDataId = guildDataId,
+                State = (int)state,
                 Name = name,
                 Description = description,
                 Type = (int)type,
-                TeamSize = teamSize,
-                MinMatches = minMatches,
-                MaxMatches = maxMatches,
-                MaxRankGap = maxRankGap,
-                RankGapMatchesThreshold = rankGapMatchesThreshold,
-                SameOpponentLimit = sameOpponentLimit,
-                SameOpponenReset = sameOpponenReset,
-                Start = startDate,
-                End = endDate,
-                CloseSignup = closeSignup,
 
                 Participants = new List<Participant>(),
                 Teams = new List<TeamData>(),
@@ -56,10 +43,22 @@ namespace APES
                 TournamentChallanges = new List<TournamentChallange>()
             };
 
-            Program.DB.TournamentDatas.Add(tournament);
-            await Program.DB.SaveChangesAsync();
-
             return tournament;
         }
     }
 }
+/*
+            int teamSize, 
+            DateTime? startDate = null,
+            DateTime? endDate = null,
+            DateTime? closeSignup = null,
+            string description = "", 
+            int minMatches = 0, 
+            int maxMatches = 999,
+            int maxMatchesPerTimeframe = 0,
+            int TimeFrameLimit = 0,
+            float maxRankGap = 0, 
+            int rankGapMatchesThreshold = 0, 
+            int sameOpponentLimit = 0,
+            float sameOpponenReset = 0,
+*/

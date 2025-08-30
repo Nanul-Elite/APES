@@ -66,6 +66,14 @@ namespace APES
             return mod * 2;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="winners"></param>
+        /// <param name="losers"></param>
+        /// <param name="kFactor">Max Rank Point change</param>
+        /// <param name="steepness">Steepness of the curve for different team size modifier</param>
+        /// <returns></returns>
         public static (int, float) ApplyMatchResults(List<Participant> winners, List<Participant> losers, float kFactor = 40, float steepness = 6)
         {
             float totalExpected = CalculateTeamExpected(winners, losers);
