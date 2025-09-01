@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using APES.Data;
 
-namespace APES
+namespace APES.Tournaments
 {
     public enum TournamentType
     {
@@ -17,17 +17,18 @@ namespace APES
 
     public enum TournamentState
     {
-        InSetup = 0,
-        Started = 1,
-        Closed = 2,
+        None = 0,
+        InSetup = 1,
+        Started = 2,
+        Closed = 3,
     }
 
     public class TournamentServices
     {
         public static TournamentData CreateTournamentData(
-            string name, 
+            string name,
             string description,
-            TournamentType type, 
+            TournamentType type,
             TournamentState state = TournamentState.InSetup)
         {
             var tournament = new TournamentData()
@@ -36,6 +37,10 @@ namespace APES
                 Name = name,
                 Description = description,
                 Type = (int)type,
+
+                EloMaxPointsChange = 40,
+                EloScale = 400,
+                EloStartRank = 1500,
 
                 Participants = new List<Participant>(),
                 Teams = new List<TeamData>(),

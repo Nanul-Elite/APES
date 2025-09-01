@@ -49,6 +49,10 @@ namespace APES.Data
         // Single Elimination, Season etc... Should match an enum
         public int Type { get; set; } // Added
         public int TeamSize { get; set; } // Added
+        /// <summary>
+        /// Does this tournament requires to register loadouts, 0 = no, >0 the amount of allowed loadouts
+        /// </summary>
+        public int RequiredLoadouts { get; set; } // Added
 
         // This set of Min & Max matches are to prevent a bias twards players who have a lot of time to play a lot of matches
         // The Timeframe limit set a limit of how many matches a participant/team can have in a given time frame, the time frame resets every TimeframeLimit
@@ -88,7 +92,7 @@ namespace APES.Data
 
         public int EloMaxPointsChange { get; set; } // Added
         public int EloScale {  get; set; } // Added
-        public int EloStartScore { get; set; } // Added
+        public int EloStartRank { get; set; } // Added
 
         public DateTime? Start {  get; set; } // Added
         public DateTime? CloseSignup { get; set; } // Added

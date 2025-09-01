@@ -1,5 +1,6 @@
 ﻿// APES is free and open-source software licensed under AGPL-3.0. See LICENSE file for details.
 using APES.Data;
+using APES.Tournaments;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using static APES.Program;

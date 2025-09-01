@@ -139,7 +139,7 @@ namespace APES
 
             if (interaction is SocketAutocompleteInteraction auto)
             {
-                if ((auto.Data.CommandName == "remove_tournament") && auto.Data.Current.Name == "tournament")
+                if ((auto.Data.CommandName == "remove_tournament" || auto.Data.CommandName == "edit_tournament" || auto.Data.CommandName == "register_team") && auto.Data.Current.Name == "tournament")
                 {
                     var focused = auto.Data.Current.Value?.ToString() ?? "";
 
@@ -149,7 +149,8 @@ namespace APES
                     // Fetch tournaments for this guild only
                     var results = DB.TournamentDatas.ToList()
                         .Where(t => t.GuildData!.GuildId == guildId &&
-                                    t.Name!.Contains(focused, StringComparison.OrdinalIgnoreCase))
+                                    t.Name!.Contains(focused, StringComparison.OrdinalIgnoreCase) &&
+                                    t.Name != "Server Leaderboard")
                         .Take(25)
                         .Select(t => new AutocompleteResult(t.Name, t.Id));
 
